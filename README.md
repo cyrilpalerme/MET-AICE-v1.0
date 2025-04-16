@@ -25,7 +25,7 @@ The repository "Training_data" on the master branch
 This repository contains the codes used for generating the datasets used for training and evaluating the deep learning models.
 
 ----------------------------------------------------------------------------------------------
-The repository "Training_model" on the master branch
+The repository "Train_model" on the master branch
 ----------------------------------------------------------------------------------------------
 This repository contains the codes used for developing the deep learning models. This contains the codes for training the deep learning models, and for making predictions during model development.
 
