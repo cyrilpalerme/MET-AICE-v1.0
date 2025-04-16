@@ -1,4 +1,8 @@
 # MET-AICE
+----------------------------------------------------------------------------------------------
+MET-AICE archive
+----------------------------------------------------------------------------------------------
+The MET-AICE forecasts are available on the THREDDS server of the Norwegian Meteorological Institute (https://thredds.met.no/thredds/catalog/aice_files/catalog.html).
 
 ----------------------------------------------------------------------------------------------
 The repository "Figures"
