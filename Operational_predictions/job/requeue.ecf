@@ -1,0 +1,30 @@
+# -*- coding: utf-8 -*-
+from global_vars import *
+
+import os
+import time
+import metecflow
+import sys
+import datetime
+
+try:
+    ci = metecflow.Client(GLOBAL_VARS)
+
+    # get date and time string from label in start_run.ecf task
+    taskname = GLOBAL_VARS['ecf_name']
+    parent = taskname.strip(taskname.split('/')[-1])
+
+    ci.child_complete()
+
+    print('requeue jobs that are scheduled once per day')
+    ci.requeue(parent+'/start_run')
+    ci.requeue(parent+'/AICE_predictors')
+    ci.requeue(parent+'/AICE_forecasts')
+    ci.requeue(parent+'/AICE_hdf5_to_netCDF')
+    ci.requeue(parent+'/AICE_clean')
+    ci.requeue(parent+'/AICE_archive')
+
+except RuntimeError as e:
+    print("Client failed: " + str(e))
+
+sys.exit(0)

@@ -1,0 +1,47 @@
+# -*- coding: utf-8 -*-
+from global_vars import *
+import metecflow
+import hi_util
+import os
+import sys
+import h5py
+import netCDF4
+import datetime
+###################################################################################################
+try:
+    with metecflow.Client(GLOBAL_VARS) as ci:
+ 
+        # Check if this is running on storeA or storeB
+        storeAB = hi_util.get_storeAB(ci=ci)
+        taskname = GLOBAL_VARS['ecf_name']
+        parent = taskname.strip(taskname.split('/')[-1])
+ 
+        # Get dates
+        dtg = ci.get_label_value('dtg', os.path.join(parent,'start_run'))
+        ci.child_label('dtg', dtg)
+        today = datetime.datetime.strptime(dtg, '%Y%m%dT%HZ')
+        starttime = (today - datetime.timedelta(2)).strftime('%Y-%m-%d')
+        endtime = (today + datetime.timedelta(6)).strftime('%Y-%m-%d')
+        timeref = "days since 1970-01-01 00:00:00"
+        today_date = today.strftime('%Y%m%d')
+ 
+        # For debugging
+        debug = True
+        print('storeAB=',     storeAB,   \
+              '\ndtg=',       dtg,       \
+              '\ntoday=',     today,     \
+              '\nstarttime=', starttime, \
+              '\nendtime=',   endtime)
+        #
+        sys.path.append(ci.libdir)
+        from AICE_hdf5_to_netCDF_lib import *
+        ###########################################################################################
+        paths = {}
+        paths["forecasts"] = os.path.join(ci.datadir, "forecasts/")
+        paths["forecasts_temp"] = os.path.join(ci.datadir, "forecasts_temp/")
+        Dataset = load_forecasts(paths, today_date)
+        write_netCDF_forecasts(Dataset, paths, today_date)
+	###########################################################################################
+except RuntimeError as e:
+    print("Client failed: " + str(e))
+

@@ -1,0 +1,73 @@
+# -*- coding: utf-8 -*-
+from global_vars import *
+import metecflow
+import hi_util
+import os
+import sys
+import time
+import h5py
+import glob
+import scipy
+import pyproj
+import netCDF4
+import datetime
+import numpy as np
+import sklearn.linear_model
+from scipy.ndimage import distance_transform_cdt
+###################################################################################################
+try:
+    with metecflow.Client(GLOBAL_VARS) as ci:
+
+        # Check if this is running on storeA or storeB
+        storeAB = hi_util.get_storeAB(ci=ci)        
+       	taskname = GLOBAL_VARS['ecf_name']
+        parent = taskname.strip(taskname.split('/')[-1])
+
+        # Get dates
+        dtg = ci.get_label_value('dtg', os.path.join(parent,'start_run'))       
+        ci.child_label('dtg', dtg)
+        today = datetime.datetime.strptime(dtg, '%Y%m%dT%HZ')
+        starttime = (today - datetime.timedelta(2)).strftime('%Y-%m-%d')
+        endtime = (today + datetime.timedelta(6)).strftime('%Y-%m-%d')
+        timeref = "days since 1970-01-01 00:00:00"
+        today_date = today.strftime('%Y%m%d')
+        
+        # For debugging
+        debug = True
+        print('storeAB=',     storeAB,   \
+              '\ndtg=',       dtg,       \
+              '\ntoday=',     today,     \
+              '\nstarttime=', starttime, \
+              '\nendtime=',   endtime)
+        #
+        sys.path.append(ci.libdir)
+        from AICE_predictors_lib import * 
+        ###########################################################################################
+        model_name = "SIC_Attention_Res_UNet" 
+        #
+        paths = {}
+        paths["static"] = os.path.join(storeAB, "project/fou/hi/oper/aice/static/")
+        paths["AMSR2"] = os.path.join(storeAB, "project/metproduction/products/satellite_prod/sea_ice_concentration_pmw/nrt_l4/")
+        paths["ECMWF"] = os.path.join(storeAB, "project/metproduction/products/ecmwf/nc/")
+        paths["predictors"] = os.path.join(ci.datadir, "predictors/")
+        #
+        proj = {}
+        proj["ECMWF"] = "+proj=latlon"
+        proj["AMSR2_multisensor"] = "+R=6371000 +lat_0=90 +lat_ts=90 +lon_0=0 +no_defs=None +proj=stere +type=crs +units=m +x_0=0 +y_0=0"
+        proj["AMSR2_COSI"] = "+ellps=WGS84 +lat_0=90 +lon_0=0 +no_defs=None +proj=laea +type=crs +units=m +x_0=0 +y_0=0"
+        #
+        crs = {}
+        for var in proj:
+            crs[var] = pyproj.CRS.from_proj4(proj[var])  
+
+        #
+        Datasets = {}
+        Datasets["Domain_data"] = extract_domain_and_LSM(paths)
+        Datasets["SICobs_AMSR2_SIC"] = create_AMSR2_predictor(Datasets["Domain_data"], paths, crs, today_date).produce_AMSR2_SIC()
+        Datasets["ECMWF"] = create_ECMWF_predictors(Datasets["Domain_data"], paths, crs, proj, today_date)
+        write_hdf5_predictors(Datasets, paths, today_date)
+        ###########################################################################################
+except RuntimeError as e:
+    print("Client failed: " + str(e))
+
+sys.exit(0)

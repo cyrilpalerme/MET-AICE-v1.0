@@ -1,0 +1,71 @@
+# -*- coding: utf-8 -*-
+from global_vars import *
+
+###########################################################################
+#
+# NAME:
+#    $ECF_BASE/ai/aice/start_run.ecf
+#
+# RESPONSIBLE:
+#    Cyril Palerme <cyrilp@met.no> # SUV
+#
+# RESTART:
+#    Yes
+#
+# PRIORITY:
+#    PriProd
+#
+# DESCRIPTION:
+#    This task starts at specified time, setting the 'start_run' event that triggers the
+#    entire sequence of tasks to produce the forecast.
+#    The time and date label is set, e.g. dtg=20161124T06Z,
+#    which will be used by subsequent scripts
+#
+##########################################################################
+
+import os
+import time
+import metecflow
+import sys
+
+try:
+    with metecflow.Client(GLOBAL_VARS) as ci:
+        sys.path.append(ci.etcdir)
+
+        # set date and time string for use in subsequent scripts
+        try:
+            hh = int(ci.analysistime)
+        except:
+            hh = time.gmtime()[3] - time.gmtime()[3]%6
+
+        ci.child_label('termin', '%02d' % hh)
+        dtg = time.strftime("%Y%m%dT")+'%02dZ' % hh
+        ci.child_label('dtg', dtg)
+
+
+        # trigger subsequent scripts
+
+        # Add labels with values defined in etc/model_config.py
+        # All variables that will be used as labels need to be defined in
+        # havop_def.py for the model in question (under start_run).
+        # The corresponding dictionary key in model_config.py must be the same!
+
+        # If etc/model_config.py does not exist, the code below will not do anything
+        try:
+            import model_config
+            configvars = model_config.get_config(ci)
+            for key in configvars.keys():
+                try:
+                    ci.child_label(key, configvars[key])
+                except:
+                    # Not all entries in configvars needs to be defined as labels,
+                    # skip these variables
+                    pass
+        except:
+            pass
+        ci.child_event('start_run')
+
+except RuntimeError as e:
+    print("Client failed: " + str(e))
+
+sys.exit(0)

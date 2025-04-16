@@ -1,0 +1,26 @@
+# -*- coding: utf-8 -*-
+from global_vars import *
+ 
+###########################################################################
+# FUNCTION:
+#    Cleans datadir and workdir for all old files
+#
+# RESPONSIBLE:
+#    Cyril Palerme <cyrilp@met.no>  # SUV
+##########################################################################
+#
+import os
+import sys
+import metecflow
+
+try:
+    with metecflow.Client(GLOBAL_VARS) as ci:
+        # Clean up in DATADIR
+        os.system('find {} -mtime +10 -exec rm {{}} \;'.format(os.path.join(ci.datadir, "predictors/AICE_predictors_*.h5")))
+        os.system('find {} -mtime +10 -exec rm {{}} \;'.format(os.path.join(ci.datadir, "forecasts_temp/AICE_forecasts_*.h5")))
+        os.system('find {} -mtime +10 -exec rm {{}} \;'.format(os.path.join(ci.datadir, "forecasts/AICE_forecasts_*.nc")))
+
+except RuntimeError as e:
+    print("Client failed: {}".format(e))
+
+sys.exit(0)

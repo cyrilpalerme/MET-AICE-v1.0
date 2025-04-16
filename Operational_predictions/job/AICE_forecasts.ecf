@@ -1,0 +1,78 @@
+# -*- coding: utf-8 -*-
+from global_vars import *
+import metecflow
+import hi_util
+import os
+import sys
+import time
+import h5py
+import datetime
+import numpy as np
+###################################################################################################
+try:
+    with metecflow.Client(GLOBAL_VARS) as ci:
+
+        # Check if this is running on storeA or storeB
+        storeAB = hi_util.get_storeAB(ci=ci)
+        taskname = GLOBAL_VARS['ecf_name']
+        parent = taskname.strip(taskname.split('/')[-1])
+
+        # Get dates
+        dtg = ci.get_label_value('dtg', os.path.join(parent,'start_run'))
+        ci.child_label('dtg', dtg)
+        today = datetime.datetime.strptime(dtg, '%Y%m%dT%HZ')
+        starttime = (today - datetime.timedelta(2)).strftime('%Y-%m-%d')
+        endtime   = (today + datetime.timedelta(6)).strftime('%Y-%m-%d')
+        timeref   = "days since 1970-01-01 00:00:00"
+        today_date = today.strftime('%Y%m%d')
+
+        # For debugging
+        debug = True
+        print('storeAB=',     storeAB,   \
+              '\ndtg=',       dtg,       \
+              '\ntoday=',     today,     \
+              '\nstarttime=', starttime, \
+              '\nendtime=',   endtime)
+        #
+        import tensorflow as tf
+        tf.keras.mixed_precision.set_global_policy("mixed_float16")      
+        #
+        sys.path.append(ci.libdir)
+        from AICE_forecasts_lib import *
+        ###########################################################################################
+        #
+        model_name = "SIC_Attention_Res_UNet" 
+        #
+        paths = {}
+        paths["static"] = os.path.join(storeAB, "project/fou/hi/oper/aice/static/")
+        paths["predictors"] = os.path.join(ci.datadir, "predictors/")
+        paths["forecasts_temp"] = os.path.join(ci.datadir, "forecasts_temp/")
+        #
+        sys.path.insert(0, paths["static"])
+        from Attention_Res_UNet_prod import Att_Res_UNet
+        #
+        filename_standardization = paths["static"] + "Stats_standardization_20130103_20201231_weekly.h5"
+
+
+        # Model parameters
+
+        model_params = {"list_predictors": ["LSM", "ECMWF_T2M_cum", "ECMWF_wind_x_cum", "ECMWF_wind_y_cum", "SICobs_AMSR2_SIC"],
+                        "patch_dim": (480, 544),
+                        "batch_size": 1,
+                        "n_filters": [32, 64, 128, 256, 512, 1024],
+                        "activation": "relu",
+                        "kernel_initializer": "he_normal",
+                        "batch_norm": True,
+                        "pooling_type": "Average",
+                        "dropout": 0,
+                        }
+
+        #
+        Dataset = load_predictors(paths, today_date)
+        Dataset["SIC_pred"] = make_predictions(Dataset, Att_Res_UNet, model_params, filename_standardization, paths).predict()
+        write_hdf5_forecasts(Dataset, paths, today_date)
+        ###########################################################################################
+except RuntimeError as e:
+    print("Client failed: " + str(e))
+
+sys.exit(0)
