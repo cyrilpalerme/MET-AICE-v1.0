@@ -32,6 +32,6 @@ This repository contains the codes used for developing the deep learning models.
 ----------------------------------------------------------------------------------------------
 The repository "Verification" on the master branch
 ----------------------------------------------------------------------------------------------
-This repository contains the codes used for generating the verification statistics (verification scores). The scores are written in text files that can be read using the scripts from the "Figures" repository.
+This repository contains the codes used for generating the verification statistics (verification scores). The scores are written in text files that can be read using the scripts from the "Figures" repository. There is also a script for generating a shared land sea mask between the datasets and for calculating the distance to land.
 
 
