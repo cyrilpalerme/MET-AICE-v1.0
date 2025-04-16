@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#$ -N Training_data_COSI
+#$ -N Training_data_AICE
 #$ -l h_rt=00:20:00
 #$ -S /bin/bash
 #$ -pe shmem-1 1
@@ -18,7 +18,7 @@ conda activate production-08-2023
  
 echo "Got $NSLOTS slots for job $SGE_TASK_ID."
  
-cat > "/home/cyrilp/Documents/PROG/Training_data_COSI_""$SGE_TASK_ID"".py" << EOF
+cat > "/home/cyrilp/Documents/PROG/Training_data_AICE_""$SGE_TASK_ID"".py" << EOF
 ####################################################################################################!/usr/bin/env python
 # coding: utf-8
 
@@ -583,7 +583,7 @@ def write_netCDF(date_task, Datasets, paths):
     output_netcdf.close()    
 
 
-# # Data processing 
+# # Main
 
 # In[60]:
 
@@ -628,4 +628,4 @@ else:
     print("Computing time: ", tf)
 ###################################################################################################
 EOF
-python3 "/home/cyrilp/Documents/PROG/Training_data_COSI_""$SGE_TASK_ID"".py"
+python3 "/home/cyrilp/Documents/PROG/Training_data_AICE_""$SGE_TASK_ID"".py"

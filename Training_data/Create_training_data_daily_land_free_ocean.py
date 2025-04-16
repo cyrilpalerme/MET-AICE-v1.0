@@ -563,7 +563,7 @@ def write_netCDF(date_task, Datasets, paths):
     output_netcdf.close()    
 
 
-# # Data processing 
+# # Main
 
 # In[60]:
 
@@ -606,28 +606,4 @@ else:
     #
     tf = time.time() - t0
     print("Computing time: ", tf)
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
