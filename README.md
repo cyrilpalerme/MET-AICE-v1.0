@@ -8,7 +8,7 @@ This repository contains the codes used for generating the figures of the articl
 ----------------------------------------------------------------------------------------------
 The repository "Operational_predicitons"
 ----------------------------------------------------------------------------------------------
-This repository contains the codes used for making the predictions in the operational production chain.
+This repository contains the codes used for making the predictions in the operational production chain. The operational production chain is run in a ecFlow environment (https://ecflow.readthedocs.io/en/).
 
 ----------------------------------------------------------------------------------------------
 The repository "Standardization"
