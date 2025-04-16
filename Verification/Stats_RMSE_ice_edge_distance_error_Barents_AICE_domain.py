@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 # In[279]:
 
 
-date_min = "20240321"
+date_min = "20240401"
 date_max = "20250331"
 distance_threshold = 20 * 1000 # meters
 #
