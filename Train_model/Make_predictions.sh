@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#$ -N Predictions_COSI
+#$ -N Predictions_AICE
 #$ -l h_rt=02:00:00
 #$ -S /bin/bash
 #$ -pe shmem-1 1
@@ -19,5 +19,4 @@ module load cuda/11.6.0
 source /modules/rhel8/conda/install/etc/profile.d/conda.sh
 conda activate /lustre/storeB/users/cyrilp/mycondaTF
 
-python3 "/lustre/storeB/users/cyrilp/COSI/Scripts/Operational/SIC_Attention_Res_UNet/Make_predictions.py"
-#rm /home/cyrilp/Documents/ERR/ERR_Predictions_COSI.* /home/cyrilp/Documents/OUT/OUT_Predictions_COSI.*
+python3 "/lustre/storeB/users/cyrilp/AICE/MET_AICE_Github/Train_model/Make_predictions.py"

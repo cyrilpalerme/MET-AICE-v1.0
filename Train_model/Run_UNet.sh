@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#$ -N Run_UNet_COSI
+#$ -N Run_UNet_AICE
 #$ -l h_rt=08:00:00
 #$ -S /bin/bash
 #$ -pe shmem-1 1
@@ -19,5 +19,4 @@ module load cuda/11.6.0
 source /modules/rhel8/conda/install/etc/profile.d/conda.sh
 conda activate /lustre/storeB/users/cyrilp/mycondaTF
 
-python3 "/lustre/storeB/users/cyrilp/COSI/Scripts/Operational/SIC_Attention_Res_UNet/Run_UNet.py"
-#rm /home/cyrilp/Documents/ERR/ERR_Run_UNet_COSI.* 
+python3 "/lustre/storeB/users/cyrilp/AICE/MET_AICE_Github/Train_model/Run_UNet.py"

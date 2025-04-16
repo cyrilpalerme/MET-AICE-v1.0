@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#$ -N Standardization_COSI
+#$ -N Standardization_AICE
 #$ -l h_rt=24:00:00
 #$ -S /bin/bash
 #$ -pe shmem-1 1
@@ -14,6 +14,6 @@
 ##$ -r y
 
 source /modules/rhel8/conda/install/etc/profile.d/conda.sh
-conda activate production-08-2023
+conda activate production-08-2024
 
-python3 "/lustre/storeB/users/cyrilp/COSI/Scripts/Operational/Standardization/Standardization_statistics_OP.py"
+python3 "/lustre/storeB/users/cyrilp/AICE/MET_AICE_Github/Standardization/Standardization_statistics.py"

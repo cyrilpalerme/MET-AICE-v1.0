@@ -181,7 +181,6 @@ def extract_eval_data(start_date, lead_time):
 
 def save_predictions_in_netCDF(start_date, Pred_data, Eval_data, paths = paths):
     file_output = paths["predictions_netCDF"] + "AICE_forecasts_" + start_date + ".nc"
-    file_output = paths["predictions_netCDF"] + "AICE_forecasts_" + start_date + ".nc"
     output_netcdf = netCDF4.Dataset(file_output, 'w', format = 'NETCDF4')
     Outputs = vars()
     #
@@ -417,7 +416,7 @@ def make_predictions(start_date, model, standard, LSM):
     return(Pred_data, Eval_data)
 
 
-# # Data processing
+# # Main
 
 # In[ ]:
 
@@ -433,13 +432,13 @@ unet_model.load_weights(file_model_weights)
 Scores = {}
 for sd, start_date in enumerate(list_dates_test):
     print("forecast start_date", start_date)
-    #try:
-    Pred_data, Eval_data = make_predictions(start_date = start_date, model = unet_model, standard = standard, LSM = LSM)
-    save_predictions_in_netCDF(start_date, Pred_data, Eval_data)
-    Metrics = verification_scores(Pred_data, Eval_data, start_date, LSM, grid_cell_area = grid_cell_area)
-    save_scores(Metrics, paths = paths)
-    #except:
-    #    pass
+    try:
+        Pred_data, Eval_data = make_predictions(start_date = start_date, model = unet_model, standard = standard, LSM = LSM)
+        save_predictions_in_netCDF(start_date, Pred_data, Eval_data)
+        Metrics = verification_scores(Pred_data, Eval_data, start_date, LSM, grid_cell_area = grid_cell_area)
+        save_scores(Metrics, paths = paths)
+    except:
+        pass
 #
 t1 = time.time()
 dt = t1 - t0

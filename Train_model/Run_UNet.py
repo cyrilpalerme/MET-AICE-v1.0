@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 import os
@@ -32,7 +32,7 @@ t0 = time.time()
 
 
 experiment_name = "SIC_Attention_Res_UNet"
-lead_time = 2
+lead_time = 0
 #
 function_path = "/lustre/storeB/users/cyrilp/COSI/Scripts/Operational/" + experiment_name + "/"
 sys.path.insert(0, function_path)
@@ -194,7 +194,7 @@ train_generator = Data_generator(**params_train)
 valid_generator = Data_generator(**params_valid)
 
 
-# # Data processing
+# # Main
 
 # In[ ]:
 

@@ -12,7 +12,7 @@ import numpy as np
 import time
 
 
-# Constants
+# # Constants
 
 # In[2]:
 
@@ -21,8 +21,8 @@ date_min = "20130103"
 date_max = "20201231"
 #
 paths = {}
-paths["data"] = "/lustre/storeB/project/copernicus/cosi/WP3/Operational/Training_ECMWF_1200/"
-paths["output"] = "/lustre/storeB/project/copernicus/cosi/WP3/Operational/Standardization_ECMWF_1200/"
+paths["data"] = "/lustre/storeB/project/copernicus/cosi/WP3/Operational/Training/"
+paths["output"] = "/lustre/storeB/project/copernicus/cosi/WP3/Operational/Standardization/"
 #
 list_variables = {}
 list_variables["data"] = []
@@ -31,7 +31,7 @@ list_variables["geolocation"] = ["time", "x", "y", "lat", "lon"]
 frequency = "weekly"
 
 
-# extract_dataset function
+# # extract_dataset function
 # 
 #     date_min: earliest date to consider
 #     date_max: latest date to consider
@@ -59,7 +59,7 @@ def extract_dataset(date_min, date_max, frequency, paths = paths):
     return(dataset)
 
 
-# extract_variables function
+# # extract_variables function
 # 
 #     dataset: dataset created using the function "extract dataset"
 #     list_variables: list_variables from the "Constants" section
@@ -77,7 +77,7 @@ def extract_variables(dataset, list_variables = list_variables):
     return(list_variables)
 
 
-# extract_stats function
+# # extract_stats function
 #    
 #     dataset: dataset created using the function "extract dataset"
 #     variable_name: name of the variable which is going to be analyzed
@@ -154,7 +154,7 @@ def extract_stats(dataset, variable_name):
     return(Stats)
 
 
-# write_hdf5 function
+# # write_hdf5 function
 # 
 #     Stats: output of the function "extract_stats"
 #     date_min: date_min from the "Constants" section
@@ -175,7 +175,7 @@ def write_hdf5(Stats, date_min = date_min, date_max = date_max, frequency = freq
     hf.close()
 
 
-# Data processing
+# # Main
 
 # In[ ]:
 
