@@ -15,6 +15,11 @@ The repository "Operational_predictions" on the master branch
 This repository contains the codes used for making the predictions in the operational production chain. The operational production chain is run in a ecFlow environment (https://ecflow.readthedocs.io/en/).
 
 ----------------------------------------------------------------------------------------------
+The repository "Regridding" on the master branch
+----------------------------------------------------------------------------------------------
+This repository contains the codes used for projecting the Barents-2.5km forecasts and the ice charts from the Norwegian Ice Service on the MET-AICE grid.
+
+----------------------------------------------------------------------------------------------
 The repository "Standardization" on the master branch
 ----------------------------------------------------------------------------------------------
 This repository contains the codes used for calculating the standardization (normalization) statistics of the predicor and target variables. 
