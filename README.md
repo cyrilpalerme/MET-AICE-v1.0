@@ -10,7 +10,7 @@ The repository "Figures" on the master branch
 This repository contains the codes used for generating the figures of the article.
 
 ----------------------------------------------------------------------------------------------
-The repository "Operational_predicitons" on the master branch
+The repository "Operational_predictions" on the master branch
 ----------------------------------------------------------------------------------------------
 This repository contains the codes used for making the predictions in the operational production chain. The operational production chain is run in a ecFlow environment (https://ecflow.readthedocs.io/en/).
 
