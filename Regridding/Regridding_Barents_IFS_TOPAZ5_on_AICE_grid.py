@@ -21,8 +21,8 @@ import matplotlib.pyplot as plt
 
 SGE_TASK_ID = 1
 #
-date_min = "20221215"
-date_max = "20221231"
+date_min = "20231215"
+date_max = "20231231"
 #
 paths = {}
 paths["AICE_op_forecasts"] = "/lustre/storeB/project/fou/hi/oper/aice/archive/"
@@ -70,7 +70,7 @@ class read_datasets():
                 for var in nc.variables:
                     if var == "Lambert_Azimuthal_Grid":
                         Dataset["proj4"] = nc.variables[var].proj4_string
-                    elif var == "time":
+                    elif (var == "time") and (datetime.datetime.strptime(self.date_task, "%Y%m%d") < datetime.datetime.strptime("20240401", "%Y%m%d")):
                         Dataset[var] = []
                         time_yyyymmdd = nc.variables[var][:]
                         for ts in range(0, len(time_yyyymmdd)):
