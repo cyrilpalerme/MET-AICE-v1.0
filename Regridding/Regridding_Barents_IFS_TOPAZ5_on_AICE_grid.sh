@@ -1,11 +1,10 @@
-#!/bin/bash -f
 #$ -N Models_on_AICE_grid
 #$ -l h_rt=00:05:00
 #$ -S /bin/bash
 #$ -pe shmem-1 1
 #$ -l h_rss=2G,mem_free=2G,h_data=2G
 #$ -q research-r8.q
-#$ -t 1097-1188
+#$ -t 1-1188
 ##$ -j y
 ##$ -m ba
 #$ -o /home/cyrilp/Documents/OUT/OUT_$JOB_NAME.$JOB_ID_$TASK_ID
@@ -40,7 +39,6 @@ import matplotlib.pyplot as plt
 # # Constants
 
 # In[46]:
-
 #
 date_min = "20220101"
 date_max = "20250331"
@@ -72,7 +70,7 @@ def make_list_dates(date_min, date_max):
 
 # # Load datasets
 
-# In[48]:
+# In[ ]:
 
 
 class read_datasets():
@@ -91,12 +89,6 @@ class read_datasets():
                 for var in nc.variables:
                     if var == "Lambert_Azimuthal_Grid":
                         Dataset["proj4"] = nc.variables[var].proj4_string
-                    elif (var == "time") and (datetime.datetime.strptime(self.date_task, "%Y%m%d") < datetime.datetime.strptime("20240401", "%Y%m%d")):
-                        Dataset[var] = []
-                        time_yyyymmdd = nc.variables[var][:]
-                        for ts in range(0, len(time_yyyymmdd)):
-                            date_obj = datetime.datetime.strptime(str(int(time_yyyymmdd[ts])), "%Y%m%d") + datetime.timedelta(hours = 12)
-                            Dataset[var].append(int(date_obj.timestamp()))
                     else:
                         Dataset[var] = nc.variables[var][:]
             Dataset["sea_mask"] = np.ones(np.shape(Dataset["lat"]))
