@@ -1,28 +1,28 @@
-#!/bin/bash -f
 #$ -N Training_data_AICE
 #$ -l h_rt=00:20:00
 #$ -S /bin/bash
 #$ -pe shmem-1 1
 #$ -l h_rss=4G,mem_free=4G,h_data=10G
 #$ -q research-r8.q
-#$ -t 1-1
+#$ -t 1-10
 ##$ -j y
 ##$ -m ba
 #$ -o /home/cyrilp/Documents/OUT/OUT_$JOB_NAME.$JOB_ID_$TASK_ID
 #$ -e /home/cyrilp/Documents/ERR/ERR_$JOB_NAME.$JOB_ID_$TASK_ID
 ##$ -R y
 ##$ -r y
- 
+
 source /modules/rhel8/conda/install/etc/profile.d/conda.sh
 conda activate production-08-2023
- 
+
 echo "Got $NSLOTS slots for job $SGE_TASK_ID."
- 
+
 cat > "/home/cyrilp/Documents/PROG/Training_data_AICE_""$SGE_TASK_ID"".py" << EOF
-####################################################################################################!/usr/bin/env python
+####################################################################################################
+#!/usr/bin/env python
 # coding: utf-8
 
-# In[46]:
+# In[71]:
 
 
 import os 
@@ -36,18 +36,16 @@ import time
 
 # Constants
 
-# In[47]:
-
-
+# In[72]:
 #
-date_min = "20220325"
-date_max = "20220325"
+date_min = "20241222"
+date_max = "20241231"
 #
 lead_time_max = 10
 #
 paths = {}
 paths["output"] = "/lustre/storeB/project/copernicus/cosi/WP3/Operational/Training/"
-paths["ECMWF"] = "/lustre/storeB/project/copernicus/cosi/WP3/Data/ECMWF/"
+paths["ECMWF"] = "/lustre/storeB/project/copernicus/cosi/AICE/Data/ECMWF_daily_time_steps/"
 paths["AMSR2"] = "/lustre/storeB/project/copernicus/cosi/WP2/SIC/v0.1/"
 #
 proj = {}
@@ -63,7 +61,7 @@ variables["LSM"] = ["LSM"]
 variables["ECMWF"] = ["U10M", "V10M", "T2M"]
 variables["AMSR2"] = ["ice_conc", "total_standard_uncertainty"] 
 #
-Dates_AMSR2_missing_data = ["20151204", "20160415", "20170928", "20171125", "20181216", "20210203", "20210620", "20210816", "20211102", "20220413", "20220418", "20220729", "20221122"]
+Dates_AMSR2_missing_data = ["20151204", "20160415", "20170928", "20171125", "20181216", "20210203", "20210620", "20210816", "20211102", "20220324", "20220413", "20220418", "20220729", "20221122", "20230212", "20230301", "20230401", "20230424", "20230822", "20230828", "20230901", "20240417", "20240919", "20240920"]
 
 
 # task_date function
@@ -72,7 +70,7 @@ Dates_AMSR2_missing_data = ["20151204", "20160415", "20170928", "20171125", "201
 #     date_max: latest forecast start date to process
 #     task_ID: task ID when parallelizing (SGE_TASK_ID)
 
-# In[48]:
+# In[73]:
 
 
 def task_date(date_min, date_max, task_ID):
@@ -86,7 +84,7 @@ def task_date(date_min, date_max, task_ID):
     return(date_task)
 
 
-# In[49]:
+# In[74]:
 
 
 def extract_domain_and_LSM(paths):
@@ -115,37 +113,12 @@ def extract_domain_and_LSM(paths):
     return(Domain_data)
 
 
-# # ECMWF_time_steps_to_daily_time_steps function => Compute the daily mean of the variable for each days
-# 
-#     time_ECMWF: time variable in ECMWF netCDF files
-#     field: 2D array variable
-#     ndays: number of days (lead time) to compute 
-
-# In[50]:
-
-
-def ECMWF_time_steps_to_daily_time_steps(time_ECMWF, field, ndays):
-    lead_time = time_ECMWF - time_ECMWF[0]
-    ts_start = np.linspace(0 * 24, (ndays - 1) * 24, ndays)
-    ts_end = ts_start + 24
-    daily_field = np.full((ndays, field.shape[1], field.shape[2]), np.nan)
-    #
-    for ts in range(0, ndays):
-        lead_time_idx = np.squeeze(np.where(np.logical_and(lead_time >= ts_start[ts], lead_time < ts_end[ts])))
-        if ts == 3:
-            daily_field[ts,:,:] = (18 * np.nanmean(np.ma.squeeze(field[lead_time_idx[0:18],:,:]), axis = 0) + 6 * np.nanmean(np.ma.squeeze(field[lead_time_idx[18:20],:,:]), axis = 0)) / 24
-        else:
-            daily_field[ts,:,:] = np.nanmean(np.ma.squeeze(field[lead_time_idx,:,:]), axis = 0)
-    #
-    return(daily_field)
-
-
 # # Padding function (make_padding)
 # 
 #     x and y must be vectors (can be latitude / longitude if the data are on a regular grid)  
 #     field must be either a 2D array (y, x) or a 3D array (time, y, x)
 
-# In[51]:
+# In[75]:
 
 
 def make_padding(x, y, field):
@@ -178,7 +151,7 @@ def make_padding(x, y, field):
 #     field must be either a 2D array with dimensions (y, x) or a 3D array with dimensions (time, y, x) 
 #     invalid_values = fill value to replace by 0. Land is therefore considered as open ocean.
 
-# In[52]:
+# In[76]:
 
 
 def nearest_neighbor_indexes(x_input, y_input, x_output, y_output):
@@ -196,7 +169,7 @@ def nearest_neighbor_indexes(x_input, y_input, x_output, y_output):
     return(idx)
 
 
-# In[53]:
+# In[77]:
 
 
 def nearest_neighbor_interp(xx_input, yy_input, x_output, y_output, field, fill_value = None):
@@ -244,7 +217,7 @@ def nearest_neighbor_interp(xx_input, yy_input, x_output, y_output, field, fill_
 # # Rotate wind function
 #     x_wind, y_wind, lats, lons must be numpy arrays
 
-# In[54]:
+# In[78]:
 
 
 def rotate_wind(x_wind, y_wind, lats, lons, proj_str_from, proj_str_to):
@@ -300,7 +273,7 @@ def rotate_wind(x_wind, y_wind, lats, lons, proj_str_from, proj_str_to):
 #     variables: list of variables (excluding time, x, y, lat, lon) to extract (list of strings)
 #     paths: dictionary defined in the Constants section
 
-# In[55]:
+# In[79]:
 
 
 def read_netCDF(filename, variables, paths = paths):
@@ -359,23 +332,19 @@ def read_netCDF(filename, variables, paths = paths):
 #     proj: dictionary of proj4 strings
 #     variables: list of variables to extract (variables["ECMWF"])
 
-# In[56]:
+# In[ ]:
 
 
 def extract_ECMWF_data(filename, ndays, domain, proj = proj, variables = variables["ECMWF"], crs = crs):
-    ECMWF = read_netCDF(filename, variables)
+    Data_ECMWFgrid = read_netCDF(filename, variables)
     Data_AMSR2grid = {}
     transform_ECMWF_to_AMSR2 = pyproj.Transformer.from_crs(crs["ECMWF"], crs["AMSR2"], always_xy = True)
-    lons, lats = np.meshgrid(ECMWF["lon"], ECMWF["lat"])
+    lons, lats = np.meshgrid(Data_ECMWFgrid["lon"], Data_ECMWFgrid["lat"])
     xx_ECMWF_AMSR2proj, yy_ECMWF_AMSR2proj = transform_ECMWF_to_AMSR2.transform(lons, lats)
     #
-    Data_ECMWFgrid = {}
-    for var in variables:
-        Data_ECMWFgrid[var] = ECMWF_time_steps_to_daily_time_steps(ECMWF["time"], ECMWF[var], ndays)
-    #
     if ("U10M" in Data_ECMWFgrid) and ("V10M" in Data_ECMWFgrid):
-        x_wind = np.full((lead_time_max, len(ECMWF["lat"]), len(ECMWF["lon"])), np.nan)
-        y_wind = np.full((lead_time_max, len(ECMWF["lat"]), len(ECMWF["lon"])), np.nan)
+        x_wind = np.full((lead_time_max, len(Data_ECMWFgrid["lat"]), len(Data_ECMWFgrid["lon"])), np.nan)
+        y_wind = np.full((lead_time_max, len(Data_ECMWFgrid["lat"]), len(Data_ECMWFgrid["lon"])), np.nan)
         #
         for ts in range(0, lead_time_max):
             x_wind_rot, y_wind_rot = rotate_wind(np.ndarray.flatten(Data_ECMWFgrid["U10M"][ts,:,:]), 
@@ -386,8 +355,8 @@ def extract_ECMWF_data(filename, ndays, domain, proj = proj, variables = variabl
                                                  proj["AMSR2"]
                                                 )
             #
-            x_wind[ts,:,:] = np.reshape(x_wind_rot, (len(ECMWF["lat"]), len(ECMWF["lon"])), order = "C")
-            y_wind[ts,:,:] = np.reshape(y_wind_rot, (len(ECMWF["lat"]), len(ECMWF["lon"])), order = "C")            
+            x_wind[ts,:,:] = np.reshape(x_wind_rot, (len(Data_ECMWFgrid["lat"]), len(Data_ECMWFgrid["lon"])), order = "C")
+            y_wind[ts,:,:] = np.reshape(y_wind_rot, (len(Data_ECMWFgrid["lat"]), len(Data_ECMWFgrid["lon"])), order = "C")            
             #
         Data_ECMWFgrid["wind_x"] = np.copy(x_wind)
         Data_ECMWFgrid["wind_y"] = np.copy(y_wind)
@@ -396,12 +365,13 @@ def extract_ECMWF_data(filename, ndays, domain, proj = proj, variables = variabl
     #
     Cum_data_ECMWFgrid = {}
     for var in Data_ECMWFgrid:
-        var_cum = np.full((lead_time_max, len(ECMWF["lat"]), len(ECMWF["lon"])), np.nan)
-        for ts in range(0, lead_time_max):
-            var_cum[ts,:,:] = np.nanmean(Data_ECMWFgrid[var][0:ts+1,:,:], axis = 0)
-        #
-        Cum_data_ECMWFgrid[var + "_cum"] = np.copy(var_cum)
-        Cum_data_ECMWFgrid[var + "_cum"][np.isnan(var_cum) == True] = -32767
+        if var in ["wind_x", "wind_y", "T2M"]:
+            var_cum = np.full((lead_time_max, len(Data_ECMWFgrid["lat"]), len(Data_ECMWFgrid["lon"])), np.nan)
+            for ts in range(0, lead_time_max):
+                var_cum[ts,:,:] = np.nanmean(Data_ECMWFgrid[var][0:ts+1,:,:], axis = 0)
+            #
+            Cum_data_ECMWFgrid[var + "_cum"] = np.copy(var_cum)
+            Cum_data_ECMWFgrid[var + "_cum"][np.isnan(var_cum) == True] = -32767
     #
     for var in Cum_data_ECMWFgrid:
         Data_AMSR2grid[var] = nearest_neighbor_interp(xx_ECMWF_AMSR2proj, yy_ECMWF_AMSR2proj, domain["x"], domain["y"], Cum_data_ECMWFgrid[var], fill_value = -32767)
@@ -416,7 +386,7 @@ def extract_ECMWF_data(filename, ndays, domain, proj = proj, variables = variabl
 #     proj: dictionary of proj4 strings
 #     crs: crs defined in "Constants"
 
-# In[57]:
+# In[81]:
 
 
 def extract_SIC_obs_predictors(date_task, domain, proj = proj, crs = crs):
@@ -449,7 +419,7 @@ def extract_SIC_obs_predictors(date_task, domain, proj = proj, crs = crs):
 #     variables: list of variables to extract 
 #     crs: crs defined in "Constants"
 
-# In[58]:
+# In[82]:
 
 
 def extract_targets(date_task, ndays, domain, paths = paths):
@@ -492,7 +462,7 @@ def extract_targets(date_task, ndays, domain, paths = paths):
 #     paths: paths defined in the Constants section
 #     trend_period: Number of days to take into account for calculating the trend
 
-# In[59]:
+# In[83]:
 
 
 def write_netCDF(date_task, Datasets, paths):
@@ -583,9 +553,9 @@ def write_netCDF(date_task, Datasets, paths):
     output_netcdf.close()    
 
 
-# # Main
+# # Data processing 
 
-# In[60]:
+# In[84]:
 
 
 t0 = time.time()
@@ -596,7 +566,7 @@ print("date_task", date_task)
 if previous_day in Dates_AMSR2_missing_data:
     print("Missing AMSR2 observations during the day preceding the forecast start date")
 else:
-    filename_ECMWF = paths["ECMWF"] + date_task[0:4] + "/" + date_task[4:6] + "/ECMWF_operational_forecasts_T2m_10mwind_" + date_task + "_NH.nc"
+    filename_ECMWF = paths["ECMWF"] + date_task[0:4] + "/" + date_task[4:6] + "/ECMWF_operational_forecasts_daily_time_steps_T2m_10mwind_" + date_task + ".nc"
     #
     Datasets = {}
     #
