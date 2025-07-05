@@ -1,11 +1,10 @@
-#!/bin/bash -f
 #$ -N Models_on_AICE_grid
 #$ -l h_rt=00:05:00
 #$ -S /bin/bash
 #$ -pe shmem-1 1
 #$ -l h_rss=2G,mem_free=2G,h_data=2G
 #$ -q research-r8.q
-#$ -t 1097-1188
+#$ -t 1-1
 ##$ -j y
 ##$ -m ba
 #$ -o /home/cyrilp/Documents/OUT/OUT_$JOB_NAME.$JOB_ID_$TASK_ID
@@ -39,8 +38,7 @@ import matplotlib.pyplot as plt
 
 # # Constants
 
-# In[46]:
-
+# In[ ]:
 #
 date_min = "20220101"
 date_max = "20250331"
@@ -49,7 +47,9 @@ paths = {}
 paths["AICE_op_forecasts"] = "/lustre/storeB/project/fou/hi/oper/aice/archive/"
 paths["AICE_reforecasts"] = "/lustre/storeB/project/copernicus/cosi/AICE/Predictions/AICE_v1_reforecasts/"
 paths["IFS"] = "/lustre/storeB/project/copernicus/cosi/AICE/Data/ECMWF_daily_time_steps/"
+paths["IFS_hourly"] = "/lustre/storeB/project/copernicus/cosi/AICE/Data/ECMWF_first_hourly_time_step/"
 paths["TOPAZ5"] = "/lustre/storeB/project/copernicus/sea/metnotopaz5/arctic/mersea-class1/"
+paths["TOPAZ5_hourly"] = "/lustre/storeB/project/copernicus/sea/metnotopaz5/arctic_1hr/mersea-class1/"
 paths["Barents"] = "/lustre/storeB/project/fou/hi/oper/barents_eps/archive/surface/"
 paths["output"] = "/lustre/storeB/project/copernicus/cosi/AICE/Data/Models_on_AICE_grid/"
 
@@ -72,7 +72,7 @@ def make_list_dates(date_min, date_max):
 
 # # Load datasets
 
-# In[48]:
+# In[ ]:
 
 
 class read_datasets():
@@ -91,12 +91,6 @@ class read_datasets():
                 for var in nc.variables:
                     if var == "Lambert_Azimuthal_Grid":
                         Dataset["proj4"] = nc.variables[var].proj4_string
-                    elif (var == "time") and (datetime.datetime.strptime(self.date_task, "%Y%m%d") < datetime.datetime.strptime("20240401", "%Y%m%d")):
-                        Dataset[var] = []
-                        time_yyyymmdd = nc.variables[var][:]
-                        for ts in range(0, len(time_yyyymmdd)):
-                            date_obj = datetime.datetime.strptime(str(int(time_yyyymmdd[ts])), "%Y%m%d") + datetime.timedelta(hours = 12)
-                            Dataset[var].append(int(date_obj.timestamp()))
                     else:
                         Dataset[var] = nc.variables[var][:]
             Dataset["sea_mask"] = np.ones(np.shape(Dataset["lat"]))
@@ -114,6 +108,10 @@ class read_datasets():
                     else:
                         Dataset[var] = nc.variables[var][:]
             Dataset["proj4"] = "+proj=latlon"
+
+            filename_hourly = self.paths["IFS_hourly"] + self.date_task[0:4] + "/" + self.date_task[4:6] + "/" + "ECMWF_operational_forecasts_SIC_" + self.date_task + "_NH_only_t00.nc"
+            with netCDF4.Dataset(filename_hourly, "r") as nc_hourly:
+                 Dataset["SIC_t0"] = nc.variables["CI"][0,:,:] * 100
             
             filename_land_sea_mask = self.paths["IFS"] + "ECMWF_operational_forecasts_Land_Sea_Mask.nc"
             with netCDF4.Dataset(filename_land_sea_mask, "r") as nc:
@@ -142,6 +140,11 @@ class read_datasets():
                             Dataset["sea_mask"] = np.ones(np.shape(Dataset["lat"]))
                             Dataset["sea_mask"][np.squeeze(Dataset["SIC"].mask) == True] = 0
                             Dataset["SIC"][np.expand_dims(Dataset["sea_mask"] == 0, axis = 0)] = np.nan
+
+                            filename_hourly = self.paths["TOPAZ5_hourly"] + forecast_date[0:4] + "/" + forecast_date[4:6] + "/" + forecast_date + "_hr-metno-MODEL-topaz5-ARC-b" + self.date_task + "-fv02.0.nc"
+                            if os.path.isfile(filename_hourly) == True:
+                                with netCDF4.Dataset(filename_hourly, "r") as nc_hourly:
+                                    Dataset["SIC_t0"] = nc_hourly["siconc"][0,:,:] * 100
                         else:
                             SIC = nc.variables["siconc"][:,:,:] * 100
                             SIC[np.expand_dims(Dataset["sea_mask"] == 0, axis = 0)] = np.nan
@@ -171,6 +174,8 @@ class read_datasets():
                             Dataset["x"] = nc.variables["X"][:]    
                             Dataset["y"] = nc.variables["Y"][:]  
                             Dataset["sea_mask"] = nc.variables["sea_mask"][:]
+
+                        Dataset["Member" + member + "_SIC_t0"] = nc.variables["ice_concentration"][0,:,:] * 100
 
                         Dataset["Member" + member + "_SIC"] = np.full((4, len(Dataset["y"]), len(Dataset["x"])), np.nan) 
                         for ts in range(0, 4):
@@ -295,7 +300,7 @@ class regridding():
 
 # # Write netCDF output
 
-# In[50]:
+# In[ ]:
 
 
 class write_netCDF():
@@ -398,7 +403,17 @@ class write_netCDF():
             
             for model in self.Interpolated_datasets:
                 for var in self.Interpolated_datasets[model]:
-                    if "SIC" in var:
+                    if "SIC_t0" in var: 
+                        var_output = model + "_" + var
+                        member = var.replace("SIC", "").replace("_", "")
+                        Outputs[var_output] = output_netcdf.createVariable(var_output, "d", ("y", "x"))
+                        Outputs[var_output].units = "%"
+                        Outputs[var_output].standard_name = model + " " + member + " sea_ice_area_fraction"
+                        Outputs[var_output].long_name = model + " " + member + " sea ice concentration"
+                        SIC_t0 = self.Interpolated_datasets[model][var]
+                        SIC_t0[Sea_mask < 1] = np.nan
+                        Outputs[var_output][:,:] = np.copy(SIC_t0)
+                    elif ("SIC" in var) and ("SIC_t0" not in var): 
                         var_output = model + "_" + var
                         member = var.replace("SIC", "").replace("_", "")
                         Outputs[var_output] = output_netcdf.createVariable(var_output, "d", ("time", "y", "x"))

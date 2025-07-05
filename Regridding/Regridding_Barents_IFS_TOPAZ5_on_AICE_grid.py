@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[78]:
+# In[85]:
 
 
 import time
@@ -20,8 +20,8 @@ import numpy as np
 
 SGE_TASK_ID = 15
 #
-date_min = "20240101"
-date_max = "20241231"
+date_min = "20220101"
+date_max = "20250331"
 #
 paths = {}
 paths["AICE_op_forecasts"] = "/lustre/storeB/project/fou/hi/oper/aice/archive/"
@@ -36,7 +36,7 @@ paths["output"] = "/lustre/storeB/project/copernicus/cosi/AICE/Data/Models_on_AI
 
 # # List dates
 
-# In[80]:
+# In[87]:
 
 
 def make_list_dates(date_min, date_max):
@@ -52,7 +52,7 @@ def make_list_dates(date_min, date_max):
 
 # # Load datasets
 
-# In[81]:
+# In[88]:
 
 
 class read_datasets():
@@ -175,7 +175,7 @@ class read_datasets():
 
 #  # Regridding
 
-# In[82]:
+# In[89]:
 
 
 class regridding():
@@ -280,7 +280,7 @@ class regridding():
 
 # # Write netCDF output
 
-# In[83]:
+# In[90]:
 
 
 class write_netCDF():
@@ -411,7 +411,7 @@ class write_netCDF():
 
 # # Main
 
-# In[84]:
+# In[91]:
 
 
 t0 = time.time()

@@ -4,7 +4,7 @@
 #$ -pe shmem-1 1
 #$ -l h_rss=2G,mem_free=2G,h_data=2G
 #$ -q research-r8.q
-#$ -t 1-1
+#$ -t 1-10
 ##$ -j y
 ##$ -m ba
 #$ -o /home/cyrilp/Documents/OUT/OUT_$JOB_NAME.$JOB_ID_$TASK_ID
@@ -23,7 +23,7 @@ cat > "/home/cyrilp/Documents/PROG/Models_on_AICE_grid_""$SGE_TASK_ID"".py" << E
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[45]:
+# In[85]:
 
 
 import time
@@ -33,7 +33,6 @@ import scipy
 import pyproj
 import datetime
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 # # Constants
@@ -56,7 +55,7 @@ paths["output"] = "/lustre/storeB/project/copernicus/cosi/AICE/Data/Models_on_AI
 
 # # List dates
 
-# In[47]:
+# In[87]:
 
 
 def make_list_dates(date_min, date_max):
@@ -72,7 +71,7 @@ def make_list_dates(date_min, date_max):
 
 # # Load datasets
 
-# In[ ]:
+# In[88]:
 
 
 class read_datasets():
@@ -111,7 +110,7 @@ class read_datasets():
 
             filename_hourly = self.paths["IFS_hourly"] + self.date_task[0:4] + "/" + self.date_task[4:6] + "/" + "ECMWF_operational_forecasts_SIC_" + self.date_task + "_NH_only_t00.nc"
             with netCDF4.Dataset(filename_hourly, "r") as nc_hourly:
-                 Dataset["SIC_t0"] = nc.variables["CI"][0,:,:] * 100
+                Dataset["SIC_t0"] = nc_hourly.variables["CI"][0,:,:] * 100
             
             filename_land_sea_mask = self.paths["IFS"] + "ECMWF_operational_forecasts_Land_Sea_Mask.nc"
             with netCDF4.Dataset(filename_land_sea_mask, "r") as nc:
@@ -195,7 +194,7 @@ class read_datasets():
 
 #  # Regridding
 
-# In[49]:
+# In[89]:
 
 
 class regridding():
@@ -278,11 +277,11 @@ class regridding():
                                 lon_pad, lat_pad = np.meshgrid(lon_1D_pad, lat_1D_pad)
                             idx = self.extract_idx(lat_pad, lon_pad)
 
-                            if var == "sea_mask":
+                            if (var == "sea_mask") or ("SIC_t0" in var):
                                 field_flat = np.ndarray.flatten(var_pad)
                                 field_interp = field_flat[idx]
                                 field_regrid = np.reshape(field_interp, (len(self.Model_data["AICE"]["y"]), len(self.Model_data["AICE"]["x"])), order = "C")
-                            elif "SIC" in var:
+                            elif ("SIC" in var) and ("SIC_t0" not in var):
                                 time_dim = len(self.Model_data[model][var][:,0,0])
                                 field_regrid = np.full((time_dim, len(self.Model_data["AICE"]["y"]), len(self.Model_data["AICE"]["x"])), np.nan)
                                 for t in range(0, time_dim):
@@ -300,7 +299,7 @@ class regridding():
 
 # # Write netCDF output
 
-# In[ ]:
+# In[90]:
 
 
 class write_netCDF():
@@ -404,6 +403,7 @@ class write_netCDF():
             for model in self.Interpolated_datasets:
                 for var in self.Interpolated_datasets[model]:
                     if "SIC_t0" in var: 
+                        print(model, var)
                         var_output = model + "_" + var
                         member = var.replace("SIC", "").replace("_", "")
                         Outputs[var_output] = output_netcdf.createVariable(var_output, "d", ("y", "x"))
@@ -411,6 +411,7 @@ class write_netCDF():
                         Outputs[var_output].standard_name = model + " " + member + " sea_ice_area_fraction"
                         Outputs[var_output].long_name = model + " " + member + " sea ice concentration"
                         SIC_t0 = self.Interpolated_datasets[model][var]
+                        print(np.nanmax(SIC_t0))
                         SIC_t0[Sea_mask < 1] = np.nan
                         Outputs[var_output][:,:] = np.copy(SIC_t0)
                     elif ("SIC" in var) and ("SIC_t0" not in var): 
@@ -421,7 +422,7 @@ class write_netCDF():
                         Outputs[var_output].standard_name = model + " " + member + " sea_ice_area_fraction"
                         Outputs[var_output].long_name = model + " " + member + " sea ice concentration"
                         Outputs[var_output][:,:,:] = self.expand_grid(model, Sea_mask, var)
-    #
+    
     def __call__(self):
         Sea_mask, Domain_mask = self.make_common_sea_mask()
         self.write_output_file(Sea_mask, Domain_mask)
@@ -429,7 +430,7 @@ class write_netCDF():
 
 # # Main
 
-# In[51]:
+# In[91]:
 
 
 t0 = time.time()
